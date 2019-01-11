@@ -1,0 +1,180 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Homework 4</title>
+  <script type="text/javascript">
+    function viewJSON(what)
+    {
+        var URL = what.URL.value;  
+        if (URL == '')
+        {
+          alert("Please enter URL!")
+        }
+        function loadJSON(url) 
+        {
+            if (window.XMLHttpRequest)
+            {// code for IE7+, Firefox, Chrome, Opera, Safari
+              xmlhttp=new XMLHttpRequest();
+            } 
+            else 
+            {// code for IE6, IE5
+              xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");  
+            }
+            try
+            {
+              xmlhttp.open("GET",url,false); // "synchronous"
+              xmlhttp.send();
+              if (xmlhttp.status == 404){return 404}
+            }
+            catch (Error)
+            {
+              return false;
+            }
+            
+            jsonObj= JSON.parse(xmlhttp.responseText);
+            return jsonObj;   
+        }
+        jsonObj = loadJSON(URL);
+        
+        if (jsonObj == false)
+        {
+          alert("Cannot load the url entered (JSON fiel does not exist)!");
+          return;
+        }
+
+        if (jsonObj == 404)
+        {
+          alert("Cannot load the url entered (JSON file does not exist)!");
+          return;
+        }
+        
+        if (!jsonObj.Mainline.Table.hasOwnProperty("Row"))
+        {
+          alert("No Company Entry!");
+          return;
+        }
+        
+        if (window.ActiveXObject) //if IE, simply execute script (due to async prop).
+        {  
+          if (jsonObj.parseError.errorCode != 0) 
+          {
+            var myErr = jsonObj.parseError;
+            generateError(jsonObj);
+            hWin = window.open("", "Error", "height=300,width=340");
+            hWin.document.write(html_text);
+          } 
+          else 
+          {  
+            generateHTML(jsonObj);
+            hWin = window.open("", "Assignment4", "height=800,width=600");
+            hWin.document.write(html_text);   
+          } 
+        } 
+        else //else if FF, execute script once JSON object has loaded
+        {  
+          jsonObj.onload=generateHTML(jsonObj);
+          hWin = window.open("", "Assignment4", "height=800,width=600");
+          hWin.document.write(html_text);  
+        } hWin.document.close();  
+    }
+    function generateHTML(jsonObj)   
+    {
+      root=jsonObj.DocumentElement; 
+      html_text="<html><head><title>Top Container Shipping Companies</title></head><body>";
+        html_text+="<table border='2'>"; 
+        rows=jsonObj.Mainline.Table.Row; // an array of rows
+        rowNodeList=rows[0];
+        html_text+="<tbody>"; 
+        html_text+="<tr>"; 
+        x=0;  
+        y=0;
+        // output the headers
+        // var header_keys = Object.keys(rowNodeList);
+        var row_keys = Object.keys(rowNodeList);
+        for(i=0;i<row_keys.length;i++)           
+        { 
+          row=row_keys[i];
+          if(row=="Company") {  row=jsonObj.Mainline.Table.Header.Data[0];  }            
+          if(row=="Ships") {  row=jsonObj.Mainline.Table.Header.Data[1];  }
+          if(row=="Hubs")    row=jsonObj.Mainline.Table.Header.Data[2]; 
+          if(row=="Market")   row=jsonObj.Mainline.Table.Header.Data[3];         
+          if(row=="HomePage")  row=jsonObj.Mainline.Table.Header.Data[4];             
+          if(row=="Logo")  {row=jsonObj.Mainline.Table.Header.Data[5];    x=120;  y=66;}           
+          html_text+="<th>"+row+"</th>";         
+        }   
+        html_text+="</tr>"; 
+        // output out the values
+        for(i=0;i<rows.length;i++) //do for all companies (one per row)
+        {                 
+          rowNodeList=rows[i]; //get properties of a company (an object)
+          html_text+="<tr>";      //start a new row of the output table
+          
+        var row_keys = Object.keys(rowNodeList);
+        for(j=0;j<row_keys.length;j++) 
+        {
+          prop = row_keys[j];
+          if (row_keys[j]=="Hubs"){
+            if (rowNodeList[prop].Hub.length>1){
+              html_text+= "<td> <ul> <li>" + "<b>"+ rowNodeList[prop].Hub[0] + "</b></li>";
+              for (k=1;k<rowNodeList[prop].Hub.length;k++){
+                html_text+="<li>" + rowNodeList[prop].Hub[k] + "</li>";
+              }
+              html_text+="</ul></td>";
+            }
+            if (rowNodeList[prop].Hub.length == 1){
+              html_text+= "<td>" + "<b>"+ rowNodeList[prop].Hub[0] + "</b></td>";              
+            }
+            if (rowNodeList[prop].Hub.length == 0){
+              html_text+= "<td></td>";              
+            }
+          }
+          else if (row_keys[j]=="Logo")    
+          {//handle images separately                      
+            html_text+="<td><img src='"+ rowNodeList[prop] +"' width='"+x+"' height='"+y+"'></td>";
+          } 
+          else if (row_keys[j]=="HomePage"){
+            html_text+="<td><a href=" + rowNodeList[prop] + ">" + rowNodeList[prop] + "</a></td>";         
+          }
+          else 
+          {              
+            html_text+="<td>"+ rowNodeList[prop] +"</td>";                   
+          }                
+        }               
+          html_text+="</tr>";            
+        }                            
+        html_text+="</tbody>"; 
+        html_text+="</table>";          
+        html_text+="</body></html>";  
+    }
+  </script>
+
+  <style type="text/css">
+    #textbox{
+      margin-left: 250px;
+      width: 300px;
+      font-size: 16px;
+    }
+    #submitbox{
+      margin-left: 350px;
+      font-size: 16px;
+      cursor:pointer;
+    }
+    #submitbox:hover{
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body style>
+  <h1>Enter URL for Container Shipping Companies List JSON File  </h1>
+
+  <form name="myform" method="POST" id="location">
+    <input type="text" id="textbox" name="URL" />
+    <br />
+    <br />
+    <input type="button" id="submitbox" name="submit" value="Submit Query" onClick="viewJSON(this.form)" />
+  </form>
+</body>
+
+</html>
